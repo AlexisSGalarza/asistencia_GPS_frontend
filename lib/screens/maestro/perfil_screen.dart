@@ -25,9 +25,17 @@ class PerfilScreen extends StatelessWidget {
                 child: Column(
                   children: [
                     const SizedBox(height: 20),
-                    AnimatedListItem(index: 0, delayMs: 80, child: _buildStatsRow()),
+                    AnimatedListItem(
+                      index: 0,
+                      delayMs: 80,
+                      child: _buildStatsRow(),
+                    ),
                     const SizedBox(height: 20),
-                    AnimatedListItem(index: 1, delayMs: 80, child: _buildInfoSection()),
+                    AnimatedListItem(
+                      index: 1,
+                      delayMs: 80,
+                      child: _buildInfoSection(),
+                    ),
                     const SizedBox(height: 15),
                     AnimatedListItem(
                       index: 2,
