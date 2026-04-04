@@ -15,6 +15,8 @@ import 'screens/supervisor/visualizador_reportes_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Fuentes solo desde caché local, sin requerir internet
+  GoogleFonts.config.allowRuntimeFetching = false;
   await dotenv.load(fileName: '.env');
   runApp(const MyApp());
 }
@@ -32,6 +34,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
         textTheme: GoogleFonts.montserratTextTheme(),
       ),
+      scrollBehavior: const _AppScrollBehavior(),
       home: const SplashScreen(),
       routes: {
         '/login': (_) => const LoginScreen(),
@@ -47,4 +50,13 @@ class MyApp extends StatelessWidget {
       },
     );
   }
+}
+
+/// Aplica BouncingScrollPhysics en toda la app (iOS y Android)
+class _AppScrollBehavior extends ScrollBehavior {
+  const _AppScrollBehavior();
+
+  @override
+  ScrollPhysics getScrollPhysics(BuildContext context) =>
+      const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics());
 }

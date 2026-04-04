@@ -1,14 +1,8 @@
 import 'package:flutter/material.dart';
 
-/// Widget que anima la entrada de un elemento de lista con
-/// un efecto de fade + slide desde abajo, con retraso escalonado
-/// basado en el [index] del elemento.
-///
-/// Uso:
-/// ```dart
-/// _AnimatedListItem(index: i, child: MiCard())
-/// ```
-class AnimatedListItem extends StatelessWidget {
+/// Anima la entrada de un elemento de lista con fade + slide desde abajo,
+/// con retraso escalonado basado en el [index].
+class AnimatedListItem extends StatefulWidget {
   const AnimatedListItem({
     super.key,
     required this.index,
@@ -18,39 +12,48 @@ class AnimatedListItem extends StatelessWidget {
 
   final int index;
   final Widget child;
-
-  /// Milisegundos de retraso adicional por índice (default 60ms)
   final int delayMs;
 
   @override
-  Widget build(BuildContext context) {
-    final delay = Duration(milliseconds: index * delayMs);
-    final duration = const Duration(milliseconds: 350);
+  State<AnimatedListItem> createState() => _AnimatedListItemState();
+}
 
-    return TweenAnimationBuilder<double>(
-      key: ValueKey(index),
-      tween: Tween(begin: 0.0, end: 1.0),
-      duration: duration + delay,
-      curve: Curves.easeOut,
-      builder: (context, value, child) {
-        // value va de 0.0 a 1.0; el retraso se simula acortando el progreso
-        // relativo al delay proporcional
-        final progress =
-            ((value -
-                        (delay.inMilliseconds /
-                            (duration + delay).inMilliseconds)) /
-                    (duration.inMilliseconds /
-                        (duration + delay).inMilliseconds))
-                .clamp(0.0, 1.0);
-        return Opacity(
-          opacity: progress,
-          child: Transform.translate(
-            offset: Offset(0, 20 * (1.0 - progress)),
-            child: child,
-          ),
-        );
-      },
-      child: child,
+class _AnimatedListItemState extends State<AnimatedListItem>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _opacity;
+  late final Animation<Offset> _slide;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 350),
+    );
+
+    _opacity = CurvedAnimation(parent: _controller, curve: Curves.easeOut);
+    _slide = Tween<Offset>(
+      begin: const Offset(0, 0.12),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+
+    Future.delayed(Duration(milliseconds: widget.index * widget.delayMs), () {
+      if (mounted) _controller.forward();
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _opacity,
+      child: SlideTransition(position: _slide, child: widget.child),
     );
   }
 }

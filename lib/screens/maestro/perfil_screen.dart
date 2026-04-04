@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/api_service.dart';
+import '../../widgets/animated_list_item.dart';
 import '../login/login_screen.dart';
 import 'marcar_asistencia_screen.dart';
 import 'horario_screen.dart';
@@ -24,17 +25,19 @@ class PerfilScreen extends StatelessWidget {
                 child: Column(
                   children: [
                     const SizedBox(height: 20),
-                    animatedSection(delay: 0, child: _buildStatsRow()),
+                    AnimatedListItem(index: 0, delayMs: 80, child: _buildStatsRow()),
                     const SizedBox(height: 20),
-                    animatedSection(delay: 80, child: _buildInfoSection()),
+                    AnimatedListItem(index: 1, delayMs: 80, child: _buildInfoSection()),
                     const SizedBox(height: 15),
-                    animatedSection(
-                      delay: 160,
+                    AnimatedListItem(
+                      index: 2,
+                      delayMs: 80,
                       child: _buildActionsSection(context),
                     ),
                     const SizedBox(height: 15),
-                    animatedSection(
-                      delay: 240,
+                    AnimatedListItem(
+                      index: 3,
+                      delayMs: 80,
                       child: _buildDangerZone(context),
                     ),
                     const SizedBox(height: 30),
@@ -46,28 +49,6 @@ class PerfilScreen extends StatelessWidget {
         ),
       ),
       bottomNavigationBar: _buildBottomNav(context),
-    );
-  }
-
-  // Helper: anima una sección con fade + slide desde abajo
-  Widget animatedSection({required int delay, required Widget child}) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.0, end: 1.0),
-      duration: Duration(milliseconds: 350 + delay),
-      curve: Curves.easeOut,
-      builder: (context, value, ch) {
-        final progress =
-            ((value - delay / (350.0 + delay)) / (350.0 / (350.0 + delay)))
-                .clamp(0.0, 1.0);
-        return Opacity(
-          opacity: progress,
-          child: Transform.translate(
-            offset: Offset(0, 24 * (1.0 - progress)),
-            child: ch,
-          ),
-        );
-      },
-      child: child,
     );
   }
 
