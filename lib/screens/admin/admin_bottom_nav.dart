@@ -2,35 +2,32 @@ import 'package:flutter/material.dart';
 import '../../services/api_service.dart';
 
 /// Barra de navegación inferior del panel admin.
-/// [currentIndex]: 0=Dashboard, 1=Usuarios, 2=Horarios, 3=Configuración, 4=Reportes, 5=Salir.
+/// [currentIndex]: 0=Dashboard, 1=Usuarios, 2=Horarios, 3=Config, 4=Reportes.
+/// El botón de Salir se mueve al header de cada pantalla.
 Widget buildAdminBottomNav(BuildContext context, int currentIndex) {
   return Container(
     decoration: BoxDecoration(
       color: Colors.white,
       borderRadius: const BorderRadius.only(
-        topLeft: Radius.circular(25),
-        topRight: Radius.circular(25),
+        topLeft: Radius.circular(28),
+        topRight: Radius.circular(28),
       ),
       boxShadow: [
         BoxShadow(
-          color: Colors.grey.withOpacity(0.2),
-          blurRadius: 15,
-          offset: const Offset(0, -5),
+          color: Colors.black.withOpacity(0.08),
+          blurRadius: 20,
+          offset: const Offset(0, -4),
         ),
       ],
     ),
     child: ClipRRect(
       borderRadius: const BorderRadius.only(
-        topLeft: Radius.circular(25),
-        topRight: Radius.circular(25),
+        topLeft: Radius.circular(28),
+        topRight: Radius.circular(28),
       ),
-      child: BottomNavigationBar(
-        currentIndex: currentIndex,
-        onTap: (index) {
-          if (index == 5) {
-            _confirmarLogout(context);
-            return;
-          }
+      child: NavigationBar(
+        selectedIndex: currentIndex,
+        onDestinationSelected: (index) {
           if (index == currentIndex) return;
           if (index == 0) {
             Navigator.pushReplacementNamed(context, '/admin/dashboard');
@@ -44,49 +41,36 @@ Widget buildAdminBottomNav(BuildContext context, int currentIndex) {
             Navigator.pushReplacementNamed(context, '/admin/reportes');
           }
         },
-        type: BottomNavigationBarType.fixed,
         backgroundColor: Colors.white,
-        selectedItemColor: const Color(0xFF6B2D8B),
-        unselectedItemColor: Colors.grey,
-        selectedLabelStyle: const TextStyle(
-          fontFamily: 'Montserrat',
-          fontSize: 11,
-          fontWeight: FontWeight.bold,
-        ),
-        unselectedLabelStyle: const TextStyle(
-          fontFamily: 'Montserrat',
-          fontSize: 10,
-        ),
-        items: [
-          const BottomNavigationBarItem(
+        indicatorColor: const Color(0xFF6B2D8B).withOpacity(0.15),
+        surfaceTintColor: Colors.transparent,
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+        animationDuration: const Duration(milliseconds: 300),
+        destinations: const [
+          NavigationDestination(
             icon: Icon(Icons.dashboard_outlined),
-            activeIcon: Icon(Icons.dashboard),
-            label: 'Dashboard',
+            selectedIcon: Icon(Icons.dashboard, color: Color(0xFF6B2D8B)),
+            label: 'Inicio',
           ),
-          const BottomNavigationBarItem(
+          NavigationDestination(
             icon: Icon(Icons.people_outline),
-            activeIcon: Icon(Icons.people),
+            selectedIcon: Icon(Icons.people, color: Color(0xFF6B2D8B)),
             label: 'Usuarios',
           ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.schedule_outlined),
-            activeIcon: Icon(Icons.schedule),
+          NavigationDestination(
+            icon: Icon(Icons.calendar_month_outlined),
+            selectedIcon: Icon(Icons.calendar_month, color: Color(0xFF6B2D8B)),
             label: 'Horarios',
           ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.settings_outlined),
-            activeIcon: Icon(Icons.settings),
+          NavigationDestination(
+            icon: Icon(Icons.tune_outlined),
+            selectedIcon: Icon(Icons.tune, color: Color(0xFF6B2D8B)),
             label: 'Config',
           ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.insert_chart_outlined),
-            activeIcon: Icon(Icons.insert_chart),
+          NavigationDestination(
+            icon: Icon(Icons.bar_chart_outlined),
+            selectedIcon: Icon(Icons.bar_chart, color: Color(0xFF6B2D8B)),
             label: 'Reportes',
-          ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.logout, color: Color(0xFFC62828)),
-            activeIcon: Icon(Icons.logout, color: Color(0xFFC62828)),
-            label: 'Salir',
           ),
         ],
       ),
@@ -94,7 +78,7 @@ Widget buildAdminBottomNav(BuildContext context, int currentIndex) {
   );
 }
 
-void _confirmarLogout(BuildContext context) {
+void confirmarLogout(BuildContext context) {
   showDialog(
     context: context,
     builder: (ctx) => AlertDialog(

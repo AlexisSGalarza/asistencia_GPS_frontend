@@ -126,7 +126,7 @@ class _GestionPerimetrosScreenState extends State<GestionPerimetrosScreen> {
       });
 
       if (result != null) {
-        _exito('✅ Perímetro guardado correctamente');
+        _exito('Perímetro guardado correctamente');
       } else {
         _error('No se pudo guardar el perímetro.');
       }
@@ -252,7 +252,7 @@ class _GestionPerimetrosScreenState extends State<GestionPerimetrosScreen> {
                       Navigator.pop(ctx);
 
                       if (result != null) {
-                        _exito('✅ Red guardada correctamente');
+                        _exito('Red guardada correctamente');
                         _cargarTodo();
                       } else {
                         _error(
@@ -346,7 +346,18 @@ class _GestionPerimetrosScreenState extends State<GestionPerimetrosScreen> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(msg, style: const TextStyle(fontFamily: 'Montserrat')),
+        content: Row(
+          children: [
+            const Icon(Icons.check_circle, color: Colors.white, size: 18),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                msg,
+                style: const TextStyle(fontFamily: 'Montserrat'),
+              ),
+            ),
+          ],
+        ),
         backgroundColor: const Color(0xFF2E7D32),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -359,33 +370,37 @@ class _GestionPerimetrosScreenState extends State<GestionPerimetrosScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
-      body: Column(
-        children: [
-          _buildHeader(context),
-          Expanded(
-            child: _isLoading
-                ? const Center(
-                    child: CircularProgressIndicator(color: Color(0xFF6B2D8B)),
-                  )
-                : RefreshIndicator(
-                    onRefresh: _cargarTodo,
-                    color: const Color(0xFF6B2D8B),
-                    child: SingleChildScrollView(
-                      physics: const BouncingScrollPhysics(),
-                      padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildSeccionPerimetro(),
-                          const SizedBox(height: 28),
-                          _buildSeccionRedes(),
-                        ],
+      backgroundColor: const Color(0xFFF1E9F8),
+      body: SafeArea(
+        child: Column(
+          children: [
+            _buildHeader(context),
+            Expanded(
+              child: _isLoading
+                  ? const Center(
+                      child: CircularProgressIndicator(
+                        color: Color(0xFF6B2D8B),
+                      ),
+                    )
+                  : RefreshIndicator(
+                      onRefresh: _cargarTodo,
+                      color: const Color(0xFF6B2D8B),
+                      child: SingleChildScrollView(
+                        physics: const BouncingScrollPhysics(),
+                        padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildSeccionPerimetro(),
+                            const SizedBox(height: 28),
+                            _buildSeccionRedes(),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
       bottomNavigationBar: buildAdminBottomNav(context, 3),
     );
@@ -422,14 +437,20 @@ class _GestionPerimetrosScreenState extends State<GestionPerimetrosScreen> {
               ],
             ),
           ),
-        const Text(
-          '📍 Perímetro GPS',
-          style: TextStyle(
-            fontFamily: 'Montserrat',
-            fontSize: 17,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF3D3D3D),
-          ),
+        Row(
+          children: [
+            const Icon(Icons.location_on, size: 20, color: Color(0xFF3D3D3D)),
+            const SizedBox(width: 6),
+            const Text(
+              'Perímetro GPS',
+              style: TextStyle(
+                fontFamily: 'Montserrat',
+                fontSize: 17,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF3D3D3D),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 4),
         const Text(
@@ -442,7 +463,8 @@ class _GestionPerimetrosScreenState extends State<GestionPerimetrosScreen> {
         ),
         const SizedBox(height: 14),
         Card(
-          elevation: 5,
+          elevation: 2,
+          color: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
@@ -629,14 +651,24 @@ class _GestionPerimetrosScreenState extends State<GestionPerimetrosScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    '📶 Redes WiFi Autorizadas',
-                    style: TextStyle(
-                      fontFamily: 'Montserrat',
-                      fontSize: 17,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF3D3D3D),
-                    ),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.wifi,
+                        size: 20,
+                        color: Color(0xFF3D3D3D),
+                      ),
+                      const SizedBox(width: 6),
+                      const Text(
+                        'Redes WiFi Autorizadas',
+                        style: TextStyle(
+                          fontFamily: 'Montserrat',
+                          fontSize: 17,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF3D3D3D),
+                        ),
+                      ),
+                    ],
                   ),
                   SizedBox(height: 4),
                   Text(
@@ -801,61 +833,52 @@ class _GestionPerimetrosScreenState extends State<GestionPerimetrosScreen> {
   }
 
   Widget _buildHeader(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top + (width < 400 ? 14 : 20),
-        bottom: width < 400 ? 16 : 22,
-        left: width * 0.06,
-        right: width * 0.06,
-      ),
-      decoration: const BoxDecoration(
+      padding: const EdgeInsets.fromLTRB(24, 20, 16, 24),
+      decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(30),
-          bottomRight: Radius.circular(30),
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(32),
+          bottomRight: Radius.circular(32),
         ),
         boxShadow: [
           BoxShadow(
-            color: Color(0x22000000),
-            blurRadius: 12,
-            offset: Offset(0, 4),
+            color: Colors.black.withOpacity(0.07),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Row(
         children: [
-          Icon(
-            Icons.settings,
-            color: const Color(0xFF6B2D8B),
-            size: width < 400 ? 26 : 32,
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: const Color(0xFF6B2D8B).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Icon(Icons.tune, color: Color(0xFF6B2D8B), size: 26),
           ),
-          const SizedBox(width: 12),
-          Expanded(
+          const SizedBox(width: 14),
+          const Expanded(
             child: Text(
               'Configuración',
               style: TextStyle(
                 fontFamily: 'Montserrat',
-                fontSize: width < 400 ? 20 : 24,
+                fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: const Color(0xFF6B2D8B),
+                color: Color(0xFF3D3D3D),
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
           IconButton(
-            icon: _isLoading
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Color(0xFF6B2D8B),
-                    ),
-                  )
-                : const Icon(Icons.refresh, color: Color(0xFF6B2D8B)),
-            onPressed: _isLoading ? null : _cargarTodo,
-            tooltip: 'Recargar',
+            icon: const Icon(Icons.logout, color: Color(0xFF6B2D8B)),
+            onPressed: () => confirmarLogout(context),
+            tooltip: 'Cerrar sesión',
           ),
         ],
       ),

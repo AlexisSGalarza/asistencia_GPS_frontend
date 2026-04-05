@@ -283,11 +283,13 @@ class ApiService {
     return {'entrada_registrada': false, 'salida_registrada': false};
   }
 
-  /// Registrar asistencia (entrada o salida) enviando solo lat/lng.
+  /// Registrar asistencia (entrada o salida) enviando lat/lng + WiFi para validación.
   static Future<Map<String, dynamic>> registrarAsistencia({
     required String tipo,
     required double latitud,
     required double longitud,
+    String ssid = '',
+    String bssid = '',
   }) async {
     // Redondear a 6 decimales para evitar el error de validación del DecimalField en Django
     final latRounded = double.parse(latitud.toStringAsFixed(6));
@@ -300,6 +302,8 @@ class ApiService {
         'tipo': tipo,
         'latitud': latRounded,
         'longitud': lngRounded,
+        'ssid': ssid,
+        'bssid': bssid,
       }),
     );
 
@@ -347,8 +351,6 @@ class ApiService {
 
   // ─── INCIDENCIAS ───
 
-  /// Obtener incidencias del maestro (o del equipo si es supervisor).
-  /// Supervisor puede filtrar: ?usuario=1&fecha=2026-02-21&tipo=retardo&fecha_inicio=...&fecha_fin=...
   static Future<List<dynamic>> getIncidencias({
     int? usuarioId,
     String? fecha,
@@ -379,8 +381,6 @@ class ApiService {
 
   // ─── ADMIN / SUPERVISIÓN ───
 
-  /// Panel de supervisión: estado de asistencia de hoy por maestro.
-  /// GET /api/asistencia/panel/?fecha=YYYY-MM-DD
   static Future<Map<String, dynamic>> getPanelSupervision({
     String? fecha,
   }) async {

@@ -446,14 +446,12 @@ class _GestionHorariosScreenState extends State<GestionHorariosScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
-
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: const Color(0xFFF1E9F8),
       body: SafeArea(
         child: Column(
           children: [
-            _buildHeader(context, width),
+            _buildHeader(context),
             Expanded(
               child: _isLoading
                   ? const Center(
@@ -503,47 +501,57 @@ class _GestionHorariosScreenState extends State<GestionHorariosScreen> {
     );
   }
 
-  Widget _buildHeader(BuildContext context, double width) {
+  Widget _buildHeader(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.symmetric(
-        horizontal: width * 0.06,
-        vertical: width < 400 ? 18 : 28,
-      ),
-      decoration: const BoxDecoration(
+      padding: const EdgeInsets.fromLTRB(24, 20, 16, 24),
+      decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(30),
-          bottomRight: Radius.circular(30),
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(32),
+          bottomRight: Radius.circular(32),
         ),
         boxShadow: [
           BoxShadow(
-            color: Color(0x22000000),
-            blurRadius: 12,
-            offset: Offset(0, 4),
+            color: Colors.black.withOpacity(0.07),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Row(
         children: [
-          Icon(
-            Icons.schedule,
-            color: const Color(0xFF6B2D8B),
-            size: width < 400 ? 28 : 36,
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: const Color(0xFF6B2D8B).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Icon(
+              Icons.calendar_month,
+              color: Color(0xFF6B2D8B),
+              size: 26,
+            ),
           ),
           const SizedBox(width: 14),
-          Expanded(
+          const Expanded(
             child: Text(
               'Gestión de Horarios',
               style: TextStyle(
                 fontFamily: 'Montserrat',
-                fontSize: width < 400 ? 20 : 26,
+                fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: const Color(0xFF6B2D8B),
+                color: Color(0xFF3D3D3D),
               ),
-              maxLines: 2,
+              maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
+          ),
+          IconButton(
+            onPressed: () => confirmarLogout(context),
+            icon: const Icon(Icons.logout, color: Color(0xFF6B2D8B)),
+            tooltip: 'Cerrar sesión',
           ),
         ],
       ),

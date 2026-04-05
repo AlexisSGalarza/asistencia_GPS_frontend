@@ -2,33 +2,33 @@ import 'package:flutter/material.dart';
 import '../../services/api_service.dart';
 
 /// Barra de navegación inferior del panel supervisor.
-/// [currentIndex]: 0=Incidencias, 1=Historial Equipo, 2=Reportes, 3=Salir.
+/// [currentIndex]: 0=Incidencias, 1=Historial, 2=Reportes.
 Widget buildSupervisorBottomNav(BuildContext context, int currentIndex) {
   return Container(
     decoration: BoxDecoration(
       color: Colors.white,
       borderRadius: const BorderRadius.only(
-        topLeft: Radius.circular(25),
-        topRight: Radius.circular(25),
+        topLeft: Radius.circular(28),
+        topRight: Radius.circular(28),
       ),
       boxShadow: [
         BoxShadow(
-          color: Colors.grey.withOpacity(0.2),
-          blurRadius: 15,
-          offset: const Offset(0, -5),
+          color: Colors.black.withOpacity(0.08),
+          blurRadius: 20,
+          offset: const Offset(0, -4),
         ),
       ],
     ),
     child: ClipRRect(
       borderRadius: const BorderRadius.only(
-        topLeft: Radius.circular(25),
-        topRight: Radius.circular(25),
+        topLeft: Radius.circular(28),
+        topRight: Radius.circular(28),
       ),
-      child: BottomNavigationBar(
-        currentIndex: currentIndex,
-        onTap: (index) {
+      child: NavigationBar(
+        selectedIndex: currentIndex,
+        onDestinationSelected: (index) {
           if (index == 3) {
-            _confirmarLogout(context);
+            confirmarLogoutSupervisor(context);
             return;
           }
           if (index == currentIndex) return;
@@ -40,38 +40,33 @@ Widget buildSupervisorBottomNav(BuildContext context, int currentIndex) {
             Navigator.pushReplacementNamed(context, '/supervisor/reportes');
           }
         },
-        type: BottomNavigationBarType.fixed,
         backgroundColor: Colors.white,
-        selectedItemColor: const Color(0xFF6B2D8B),
-        unselectedItemColor: Colors.grey,
-        selectedLabelStyle: const TextStyle(
-          fontFamily: 'Montserrat',
-          fontSize: 11,
-          fontWeight: FontWeight.bold,
-        ),
-        unselectedLabelStyle: const TextStyle(
-          fontFamily: 'Montserrat',
-          fontSize: 10,
-        ),
-        items: [
-          const BottomNavigationBarItem(
+        indicatorColor: const Color(0xFF6B2D8B).withOpacity(0.15),
+        surfaceTintColor: Colors.transparent,
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+        animationDuration: const Duration(milliseconds: 300),
+        destinations: const [
+          NavigationDestination(
             icon: Icon(Icons.warning_amber_outlined),
-            activeIcon: Icon(Icons.warning_amber_rounded),
+            selectedIcon: Icon(
+              Icons.warning_amber_rounded,
+              color: Color(0xFF6B2D8B),
+            ),
             label: 'Incidencias',
           ),
-          const BottomNavigationBarItem(
+          NavigationDestination(
             icon: Icon(Icons.history_outlined),
-            activeIcon: Icon(Icons.history),
+            selectedIcon: Icon(Icons.history, color: Color(0xFF6B2D8B)),
             label: 'Historial',
           ),
-          const BottomNavigationBarItem(
+          NavigationDestination(
             icon: Icon(Icons.bar_chart_outlined),
-            activeIcon: Icon(Icons.bar_chart),
+            selectedIcon: Icon(Icons.bar_chart, color: Color(0xFF6B2D8B)),
             label: 'Reportes',
           ),
-          const BottomNavigationBarItem(
+          NavigationDestination(
             icon: Icon(Icons.logout, color: Color(0xFFC62828)),
-            activeIcon: Icon(Icons.logout, color: Color(0xFFC62828)),
+            selectedIcon: Icon(Icons.logout, color: Color(0xFFC62828)),
             label: 'Salir',
           ),
         ],
@@ -80,7 +75,7 @@ Widget buildSupervisorBottomNav(BuildContext context, int currentIndex) {
   );
 }
 
-void _confirmarLogout(BuildContext context) {
+void confirmarLogoutSupervisor(BuildContext context) {
   showDialog(
     context: context,
     builder: (ctx) => AlertDialog(

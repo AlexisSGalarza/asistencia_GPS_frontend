@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
@@ -43,6 +44,28 @@ class _MarcarAsistenciaScreenState extends State<MarcarAsistenciaScreen> {
   bool _cargandoWifi = true;
   String? _errorWifi;
 
+  // Conectividad general (WiFi o datos móviles)
+  bool _hayRed = true;
+
+  /// Devuelve el horario del maestro para el día de hoy, o null si no tiene.
+  Map<String, dynamic>? get _horarioHoy {
+    final diasNombres = [
+      'Lunes',
+      'Martes',
+      'Miércoles',
+      'Jueves',
+      'Viernes',
+      'Sábado',
+      'Domingo',
+    ];
+    final hoy = diasNombres[DateTime.now().weekday - 1];
+    for (final h in ApiService.horarios) {
+      final dia = h['dia_semana_display']?.toString() ?? '';
+      if (dia == hoy) return h as Map<String, dynamic>;
+    }
+    return null;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -55,6 +78,7 @@ class _MarcarAsistenciaScreenState extends State<MarcarAsistenciaScreen> {
     _obtenerUbicacion();
     _cargarEstadoHoy();
     _detectarWifi();
+    _verificarConexion();
   }
 
   /// Carga el perímetro activo y recalcula distancia si ya hay GPS.
@@ -85,6 +109,25 @@ class _MarcarAsistenciaScreenState extends State<MarcarAsistenciaScreen> {
         }
       }
     } catch (_) {}
+  }
+
+  /// Verifica si el dispositivo tiene alguna conexión a internet (WiFi o datos móviles).
+  Future<void> _verificarConexion() async {
+    try {
+      final result = await InternetAddress.lookup(
+        'google.com',
+      ).timeout(const Duration(seconds: 4));
+      if (mounted) {
+        setState(
+          () =>
+              _hayRed = result.isNotEmpty && result.first.rawAddress.isNotEmpty,
+        );
+      }
+    } on SocketException catch (_) {
+      if (mounted) setState(() => _hayRed = false);
+    } on TimeoutException catch (_) {
+      if (mounted) setState(() => _hayRed = false);
+    }
   }
 
   /// Lee SSID/BSSID del dispositivo y los guarda para enviarlos al servidor.
@@ -284,6 +327,19 @@ class _MarcarAsistenciaScreenState extends State<MarcarAsistenciaScreen> {
 
   /// Registra asistencia llamando al backend.
   Future<void> _registrarAsistencia(String tipo) async {
+    // Reverificar conexión antes de enviar
+    await _verificarConexion();
+    if (!_hayRed) {
+      _mostrarAlerta(
+        titulo: 'Sin conexión',
+        mensaje:
+            'No tienes acceso a internet. Conecta WiFi o datos móviles e intenta de nuevo.',
+        color: const Color(0xFFC62828),
+        icono: Icons.signal_wifi_off,
+      );
+      return;
+    }
+
     if (_ubicacionActual == null) {
       _mostrarAlerta(
         titulo: 'Ubicación pendiente',
@@ -303,6 +359,8 @@ class _MarcarAsistenciaScreenState extends State<MarcarAsistenciaScreen> {
         tipo: tipo,
         latitud: lat,
         longitud: lng,
+        ssid: _wifiSSID,
+        bssid: _wifiBSSID,
       );
 
       if (!mounted) return;
@@ -357,12 +415,18 @@ class _MarcarAsistenciaScreenState extends State<MarcarAsistenciaScreen> {
           icono: alertIcon,
         );
       } else {
-        // En caso de error de perimetro el backend manda 400 y cae aquí directamente
+        // Detectar si el error es de WiFi no autorizado
+        final mensaje = result['mensaje'] ?? 'No se pudo registrar';
+        final esWifi =
+            mensaje.toLowerCase().contains('wi-fi') ||
+            mensaje.toLowerCase().contains('wifi') ||
+            mensaje.toLowerCase().contains('red') ||
+            mensaje.toLowerCase().contains('autorizada');
         _mostrarAlerta(
-          titulo: 'Fuera del perímetro',
-          mensaje: result['mensaje'] ?? 'No se pudo registrar',
+          titulo: esWifi ? 'Red no autorizada' : 'Fuera del perímetro',
+          mensaje: mensaje,
           color: const Color(0xFFC62828),
-          icono: Icons.cancel,
+          icono: esWifi ? Icons.wifi_off : Icons.cancel,
         );
       }
     } catch (e) {
@@ -757,15 +821,18 @@ class _MarcarAsistenciaScreenState extends State<MarcarAsistenciaScreen> {
       texto = 'Detectando Wi-Fi...';
       color = const Color(0xFF757575);
       icono = Icons.wifi_find;
-    } else if (_errorWifi != null) {
-      texto = _errorWifi!;
+    } else if (_wifiSSID.isEmpty ||
+        _wifiSSID == '<unknown ssid>' ||
+        _wifiSSID == '0x') {
+      texto = _errorWifi ?? 'Sin conexión Wi-Fi';
       color = const Color(0xFFC62828);
       icono = Icons.wifi_off;
+      subtexto = _wifiBSSID.isNotEmpty ? 'BSSID: $_wifiBSSID' : '';
     } else {
-      texto = _wifiSSID.isNotEmpty ? _wifiSSID : 'Wi-Fi detectado';
+      texto = _wifiSSID;
       color = const Color(0xFF1565C0);
       icono = Icons.wifi;
-      subtexto = _wifiBSSID.isNotEmpty ? _wifiBSSID : '';
+      subtexto = _wifiBSSID.isNotEmpty ? 'BSSID: $_wifiBSSID' : '';
     }
 
     return GestureDetector(
@@ -838,6 +905,10 @@ class _MarcarAsistenciaScreenState extends State<MarcarAsistenciaScreen> {
       texto = 'Calculando ubicación...';
       color = const Color(0xFF757575);
       icono = Icons.location_searching;
+    } else if (_horarioHoy == null) {
+      texto = 'Sin horario hoy';
+      color = const Color(0xFF757575);
+      icono = Icons.event_busy;
     } else if (!_dentroDelPerimetro) {
       texto = 'Fuera del perímetro';
       color = const Color(0xFFC62828);
@@ -891,133 +962,177 @@ class _MarcarAsistenciaScreenState extends State<MarcarAsistenciaScreen> {
 
   // ---------- Botones de registro ----------
   Widget _buildBotones(Size size) {
-    // Entrada activa si: tiene ubicación Y no ha registrado entrada (WiFi la valida el servidor)
-    final bool entradaActiva = _ubicacionActual != null && !_entradaRegistrada;
-    // Salida activa si: tiene ubicación Y ya registró entrada Y no ha registrado salida
+    final horario = _horarioHoy;
+    // Entrada activa si: tiene ubicación Y hay red Y tiene horario hoy Y no ha registrado entrada
+    final bool entradaActiva =
+        _ubicacionActual != null &&
+        _hayRed &&
+        horario != null &&
+        !_entradaRegistrada;
+    // Salida activa si: tiene ubicación Y hay red Y tiene horario hoy Y ya registró entrada Y no ha registrado salida
     final bool salidaActiva =
-        _ubicacionActual != null && _entradaRegistrada && !_salidaRegistrada;
+        _ubicacionActual != null &&
+        _hayRed &&
+        horario != null &&
+        _entradaRegistrada &&
+        !_salidaRegistrada;
+
+    // Aviso cuando no hay horario programado para hoy
+    final sinHorarioWidget = (horario == null && ApiService.horarios.isNotEmpty)
+        ? Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFF8E1),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0xFFFFB300), width: 1),
+            ),
+            child: Row(
+              children: const [
+                Icon(Icons.info_outline, color: Color(0xFFE65100), size: 18),
+                SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'No tienes horario programado para hoy.',
+                    style: TextStyle(
+                      fontFamily: 'Merriweather',
+                      fontSize: 11,
+                      color: Color(0xFFE65100),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          )
+        : const SizedBox.shrink();
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 30),
-      child: Row(
+      child: Column(
         children: [
-          // Botón de ENTRADA
-          Expanded(
-            child: SizedBox(
-              height: 55,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: entradaActiva
-                      ? const LinearGradient(
-                          colors: [Color(0xFFA98BC3), Color(0xFFE8A0BF)],
-                        )
-                      : const LinearGradient(
-                          colors: [Color(0xFFBDBDBD), Color(0xFFE0E0E0)],
-                        ),
-                  borderRadius: BorderRadius.circular(25),
-                  boxShadow: entradaActiva
-                      ? [
-                          BoxShadow(
-                            color: const Color(
-                              0xFFA98BC3,
-                            ).withValues(alpha: 0.4),
-                            blurRadius: 10,
-                            offset: const Offset(0, 5),
-                          ),
-                        ]
-                      : [],
-                ),
-                child: ElevatedButton.icon(
-                  onPressed: entradaActiva
-                      ? () => _registrarAsistencia('entrada')
-                      : null,
-                  icon: Icon(
-                    Icons.login,
-                    color: entradaActiva ? Colors.white : Colors.grey[600],
-                  ),
-                  label: Text(
-                    'Entrada',
-                    style: TextStyle(
-                      fontFamily: 'Merriweather',
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                      color: entradaActiva ? Colors.white : Colors.grey[600],
-                    ),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.transparent,
-                    shadowColor: Colors.transparent,
-                    disabledBackgroundColor: Colors.transparent,
-                    shape: RoundedRectangleBorder(
+          sinHorarioWidget,
+          Row(
+            children: [
+              // Botón de ENTRADA
+              Expanded(
+                child: SizedBox(
+                  height: 55,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: entradaActiva
+                          ? const LinearGradient(
+                              colors: [Color(0xFFA98BC3), Color(0xFFE8A0BF)],
+                            )
+                          : const LinearGradient(
+                              colors: [Color(0xFFBDBDBD), Color(0xFFE0E0E0)],
+                            ),
                       borderRadius: BorderRadius.circular(25),
+                      boxShadow: entradaActiva
+                          ? [
+                              BoxShadow(
+                                color: const Color(
+                                  0xFFA98BC3,
+                                ).withValues(alpha: 0.4),
+                                blurRadius: 10,
+                                offset: const Offset(0, 5),
+                              ),
+                            ]
+                          : [],
+                    ),
+                    child: ElevatedButton.icon(
+                      onPressed: entradaActiva
+                          ? () => _registrarAsistencia('entrada')
+                          : null,
+                      icon: Icon(
+                        Icons.login,
+                        color: entradaActiva ? Colors.white : Colors.grey[600],
+                      ),
+                      label: Text(
+                        'Entrada',
+                        style: TextStyle(
+                          fontFamily: 'Merriweather',
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: entradaActiva
+                              ? Colors.white
+                              : Colors.grey[600],
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.transparent,
+                        shadowColor: Colors.transparent,
+                        disabledBackgroundColor: Colors.transparent,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(25),
+                        ),
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ),
-          const SizedBox(width: 15),
-          // Botón de SALIDA
-          Expanded(
-            child: SizedBox(
-              height: 55,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: salidaActiva
-                      ? const LinearGradient(
-                          colors: [Color(0xFF6B2D8B), Color(0xFFA98BC3)],
-                        )
-                      : const LinearGradient(
-                          colors: [Color(0xFFBDBDBD), Color(0xFFE0E0E0)],
-                        ),
-                  borderRadius: BorderRadius.circular(25),
-                  boxShadow: salidaActiva
-                      ? [
-                          BoxShadow(
-                            color: const Color(
-                              0xFF6B2D8B,
-                            ).withValues(alpha: 0.3),
-                            blurRadius: 10,
-                            offset: const Offset(0, 5),
-                          ),
-                        ]
-                      : [],
-                ),
-                child: ElevatedButton.icon(
-                  onPressed: salidaActiva
-                      ? () => _registrarAsistencia('salida')
-                      : null,
-                  icon: Icon(
-                    Icons.logout,
-                    color: salidaActiva ? Colors.white : Colors.grey[600],
-                  ),
-                  label: Text(
-                    'Salida',
-                    style: TextStyle(
-                      fontFamily: 'Merriweather',
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                      color: salidaActiva ? Colors.white : Colors.grey[600],
-                    ),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.transparent,
-                    shadowColor: Colors.transparent,
-                    disabledBackgroundColor: Colors.transparent,
-                    shape: RoundedRectangleBorder(
+              const SizedBox(width: 15),
+              // Botón de SALIDA
+              Expanded(
+                child: SizedBox(
+                  height: 55,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: salidaActiva
+                          ? const LinearGradient(
+                              colors: [Color(0xFF6B2D8B), Color(0xFFA98BC3)],
+                            )
+                          : const LinearGradient(
+                              colors: [Color(0xFFBDBDBD), Color(0xFFE0E0E0)],
+                            ),
                       borderRadius: BorderRadius.circular(25),
+                      boxShadow: salidaActiva
+                          ? [
+                              BoxShadow(
+                                color: const Color(
+                                  0xFF6B2D8B,
+                                ).withValues(alpha: 0.3),
+                                blurRadius: 10,
+                                offset: const Offset(0, 5),
+                              ),
+                            ]
+                          : [],
+                    ),
+                    child: ElevatedButton.icon(
+                      onPressed: salidaActiva
+                          ? () => _registrarAsistencia('salida')
+                          : null,
+                      icon: Icon(
+                        Icons.logout,
+                        color: salidaActiva ? Colors.white : Colors.grey[600],
+                      ),
+                      label: Text(
+                        'Salida',
+                        style: TextStyle(
+                          fontFamily: 'Merriweather',
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: salidaActiva ? Colors.white : Colors.grey[600],
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.transparent,
+                        shadowColor: Colors.transparent,
+                        disabledBackgroundColor: Colors.transparent,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(25),
+                        ),
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  // ---------- Alerta personalizada ----------
   void _mostrarAlerta({
     required String titulo,
     required String mensaje,
