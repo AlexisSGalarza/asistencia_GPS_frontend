@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import '../../services/api_service.dart';
 import 'admin_bottom_nav.dart';
 
@@ -115,6 +116,88 @@ class _GestionHorariosScreenState extends State<GestionHorariosScreen> {
     return '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}:00';
   }
 
+  /// Muestra un picker estilo iOS (Cupertino) para seleccionar hora.
+  Future<TimeOfDay?> _showCupertinoTimePicker(
+    BuildContext context,
+    TimeOfDay initialTime,
+    String titulo,
+  ) async {
+    TimeOfDay selected = initialTime;
+    return showModalBottomSheet<TimeOfDay>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return SizedBox(
+          height: 320,
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      child: const Text(
+                        'Cancelar',
+                        style: TextStyle(
+                          color: Colors.grey,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      titulo,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 17,
+                        color: Color(0xFF3D3D3D),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx, selected),
+                      child: const Text(
+                        'Confirmar',
+                        style: TextStyle(
+                          color: Color(0xFF6B2D8B),
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              Expanded(
+                child: CupertinoDatePicker(
+                  mode: CupertinoDatePickerMode.time,
+                  use24hFormat: true,
+                  initialDateTime: DateTime(
+                    2024,
+                    1,
+                    1,
+                    initialTime.hour,
+                    initialTime.minute,
+                  ),
+                  onDateTimeChanged: (dt) {
+                    selected = TimeOfDay(hour: dt.hour, minute: dt.minute);
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   void _mostrarFormularioHorario({
     Map<String, dynamic>? horario,
     int? maestroIdPreseleccionado,
@@ -213,18 +296,22 @@ class _GestionHorariosScreenState extends State<GestionHorariosScreen> {
                   // ── Selector de hora entrada ──
                   InkWell(
                     onTap: () async {
-                      final picked = await showTimePicker(
-                        context: ctx,
-                        initialTime: horaEntrada,
-                        builder: (context, child) => MediaQuery(
-                          data: MediaQuery.of(
-                            context,
-                          ).copyWith(alwaysUse24HourFormat: true),
-                          child: child!,
-                        ),
+                      final picked = await _showCupertinoTimePicker(
+                        ctx,
+                        horaEntrada,
+                        'Hora de entrada',
                       );
                       if (picked != null) {
                         setDialogState(() => horaEntrada = picked);
+                        // Abrir automáticamente el selector de hora salida
+                        final pickedSalida = await _showCupertinoTimePicker(
+                          ctx,
+                          horaSalida,
+                          'Hora de salida',
+                        );
+                        if (pickedSalida != null) {
+                          setDialogState(() => horaSalida = pickedSalida);
+                        }
                       }
                     },
                     borderRadius: BorderRadius.circular(12),
@@ -253,15 +340,10 @@ class _GestionHorariosScreenState extends State<GestionHorariosScreen> {
                   // ── Selector de hora salida ──
                   InkWell(
                     onTap: () async {
-                      final picked = await showTimePicker(
-                        context: ctx,
-                        initialTime: horaSalida,
-                        builder: (context, child) => MediaQuery(
-                          data: MediaQuery.of(
-                            context,
-                          ).copyWith(alwaysUse24HourFormat: true),
-                          child: child!,
-                        ),
+                      final picked = await _showCupertinoTimePicker(
+                        ctx,
+                        horaSalida,
+                        'Hora de salida',
                       );
                       if (picked != null) {
                         setDialogState(() => horaSalida = picked);
