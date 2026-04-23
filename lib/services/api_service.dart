@@ -190,7 +190,11 @@ class ApiService {
     // por seguridad (no revela si el correo está registrado).
     // Siempre tratamos 200 como éxito y avanzamos al Paso 2.
     if (response.statusCode == 200) {
-      return {'success': true, 'mensaje': data['mensaje']};
+      return {
+        'success': true,
+        'mensaje': data['mensaje'],
+        'codigo': data['codigo'],
+      };
     } else {
       return {
         'success': false,

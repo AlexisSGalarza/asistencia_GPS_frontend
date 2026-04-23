@@ -146,10 +146,7 @@ class _GestionHorariosScreenState extends State<GestionHorariosScreen> {
                       onPressed: () => Navigator.pop(ctx),
                       child: const Text(
                         'Cancelar',
-                        style: TextStyle(
-                          color: Colors.grey,
-                          fontSize: 16,
-                        ),
+                        style: TextStyle(color: Colors.grey, fontSize: 16),
                       ),
                     ),
                     Text(

@@ -653,13 +653,13 @@ class _GestionPerimetrosScreenState extends State<GestionPerimetrosScreen> {
                 children: [
                   Row(
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.wifi,
                         size: 20,
                         color: Color(0xFF3D3D3D),
                       ),
-                      const SizedBox(width: 6),
-                      const Text(
+                      SizedBox(width: 6),
+                      Text(
                         'Redes WiFi Autorizadas',
                         style: TextStyle(
                           fontFamily: 'Montserrat',

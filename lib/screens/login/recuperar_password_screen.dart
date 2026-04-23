@@ -85,8 +85,16 @@ class _RecuperarPasswordScreenState extends State<RecuperarPasswordScreen>
       setState(() => _isLoading = false);
 
       if (result['success'] == true) {
+        final codigo = result['codigo']?.toString();
+        if (codigo != null && codigo.isNotEmpty) {
+          _codigoController.text = codigo;
+        }
         _irAlPaso2();
-        _mostrarExito('Código enviado. Revisa tu correo.');
+        _mostrarExito(
+          codigo != null && codigo.isNotEmpty
+              ? 'Código generado. Ya fue ingresado automáticamente.'
+              : 'Código enviado. Revisa tu correo.',
+        );
       } else {
         _mostrarError(result['mensaje'] ?? 'Error al solicitar recuperación');
       }
