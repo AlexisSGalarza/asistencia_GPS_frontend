@@ -5,6 +5,7 @@ import '../login/login_screen.dart';
 import 'marcar_asistencia_screen.dart';
 import 'horario_screen.dart';
 import 'registros_screen.dart';
+import 'ayuda_soporte_screen.dart';
 
 class PerfilScreen extends StatelessWidget {
   const PerfilScreen({super.key});
@@ -470,9 +471,16 @@ class PerfilScreen extends StatelessWidget {
           _buildActionTile(
             icon: Icons.help_outline,
             label: 'Ayuda y soporte',
-            subtitle: 'Contacta al administrador',
+            subtitle: 'Guía de uso y contacto',
             color: const Color(0xFFA98BC3),
-            onTap: () {},
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const AyudaSoporteScreen(),
+                ),
+              );
+            },
           ),
         ],
       ),
